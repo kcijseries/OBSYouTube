@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balloon Hangman</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400&display=swap">
+    <style>
+        body {
+            font-family: 'Lexend', sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            background-color: #000000;
+            color: #ffffff;
+        }
+
+        .main-container {
+            display: flex;
+            gap: 30px;
+            max-width: 1200px;
+            width: 100%;
+            justify-content: flex-start;
+        }
+
+        #picturecontainer {
+            width: 400px; /* Scaled down from 500px to give more room */
+            max-width: 100%;
+            flex-shrink: 0;
+        }
+
+        #balloon-image {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        #gamecontainer {
+            flex-grow: 1;
+            max-width: calc(100% - 430px); /* Adjusted for new picture width (400px + 30px gap) */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        #messagescontainer {
+            font-size: 30px;
+            color: #cccccc;
+            min-height: 36px;
+            text-align: center;
+            width: 100%;
+        }
+
+        #attempts-remaining {
+            font-size: 24px;
+            color: #cccccc;
+            text-align: center;
+            width: 100%;
+        }
+
+        #guesscontainer {
+            font-size: 54px;
+            letter-spacing: 5px;
+            margin: 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px 15px;
+            color: #ffffff;
+            line-height: 1.5;
+            width: 100%;
+        }
+
+        .word-wrapper {
+            white-space: nowrap; /* Prevents word splitting */
+        }
+
+        .letter-space {
+            display: inline-block;
+            width: 45px;
+            text-align: center;
+            border-bottom: 3px solid #ffffff;
+        }
+
+        #letterscontainer {
+            display: grid;
+            grid-template-rows: repeat(4, 1fr);
+            gap: 10px;
+            max-width: 562.5px; /* Increased from 450px by 25% */
+            width: 100%;
+        }
+
+        .letter-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .letter-btn {
+            width: 40px;
+            height: 40px;
+            font-size: 18px;
+            border: 2px solid #ffffff;
+            border-radius: 5px;
+            background-color: #333333;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .letter-btn:hover:not(:disabled) {
+            background-color: #555555;
+        }
+
+        .letter-btn:disabled {
+            background-color: #222222;
+            color: #666666;
+            cursor: not-allowed;
+        }
+
+        .letter-btn.correct {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .letter-btn.incorrect {
+            background-color: #f44336;
+            color: white;
+        }
+
+        #inputcontainer {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+        }
+
+        #word-input {
+            padding: 10px;
+            font-size: 16px;
+            width: 250px;
+            border: 2px solid #ffffff;
+            border-radius: 5px;
+            background-color: #333333;
+            color: #ffffff;
+            font-family: 'Lexend', sans-serif;
+        }
+
+        #word-input.invalid {
+            border-color: #f44336;
+        }
+
+        #word-input.valid {
+            border-color: #4CAF50;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Lexend', sans-serif;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #1976D2;
+        }
+
+        button:disabled {
+            background-color: #666666;
+            cursor: not-allowed;
+        }
+
+        #next-btn {
+            display: none;
+        }
+
+        @media (max-width: 700px) {
+            .main-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            #picturecontainer {
+                width: 100%;
+                max-width: 400px; /* Adjusted for new size */
+            }
+            #gamecontainer {
+                max-width: 100%;
+            }
+            #guesscontainer {
+                font-size: clamp(36px, 8vw, 54px);
+            }
+            .letter-space {
+                width: clamp(30px, 6vw, 45px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div id="picturecontainer">
+            <img id="balloon-image" src="balloons7.png" alt="Balloons">
+        </div>
+        <div id="gamecontainer">
+            <div id="messagescontainer"></div>
+            <div id="attempts-remaining"></div>
+            <div id="guesscontainer"></div>
+            <div id="letterscontainer"></div>
+            <div id="inputcontainer">
+                <input type="text" id="word-input" placeholder="Enter word or phrase">
+                <button id="clear-queue">Clear Queue</button>
+                <button id="add-queue">Add To Queue</button>
+                <button id="start-game">Start Game</button>
+                <button id="next-btn">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <audio id="correct-sound" src="correct.mp3"></audio>
+    <audio id="wrong-sound" src="wrong.mp3"></audio>
+    <audio id="win-sound" src="youwin.mp3"></audio>
+    <audio id="lose-sound" src="youlose.mp3"></audio>
+
+    <script>
+        let wordQueue = [];
+        let currentWord = '';
+        let displayedWord = [];
+        let attemptsLeft = 7;
+        let guessedLetters = [];
+        let currentWordIndex = 0;
+
+        const balloonImages = [
+            'balloons7.png', 'balloons6.png', 'balloons5.png',
+            'balloons4.png', 'balloons3.png', 'balloons2.png',
+            'balloons1.png', 'balloons0.png'
+        ];
+
+        // DOM elements
+        const balloonImage = document.getElementById('balloon-image');
+        const messagesContainer = document.getElementById('messagescontainer');
+        const attemptsRemaining = document.getElementById('attempts-remaining');
+        const guessContainer = document.getElementById('guesscontainer');
+        const lettersContainer = document.getElementById('letterscontainer');
+        const wordInput = document.getElementById('word-input');
+        const clearQueueBtn = document.getElementById('clear-queue');
+        const addQueueBtn = document.getElementById('add-queue');
+        const startGameBtn = document.getElementById('start-game');
+        const nextBtn = document.getElementById('next-btn');
+
+        // Audio elements
+        const correctSound = document.getElementById('correct-sound');
+        const wrongSound = document.getElementById('wrong-sound');
+        const winSound = document.getElementById('win-sound');
+        const loseSound = document.getElementById('lose-sound');
+
+        // Initialize letter grid
+        function createLetterGrid() {
+            lettersContainer.innerHTML = '';
+            const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            const lettersPerRow = Math.ceil(alphabet.length / 4);
+            
+            for (let i = 0; i < 4; i++) {
+                const row = document.createElement('div');
+                row.className = 'letter-row';
+                const start = i * lettersPerRow;
+                const end = Math.min(start + lettersPerRow, alphabet.length);
+                
+                for (let j = start; j < end; j++) {
+                    const btn = document.createElement('button');
+                    btn.className = 'letter-btn';
+                    btn.textContent = alphabet[j];
+                    btn.addEventListener('click', () => guessLetter(alphabet[j]));
+                    row.appendChild(btn);
+                }
+                lettersContainer.appendChild(row);
+            }
+        }
+
+        // Shuffle array function
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Update display
+        function updateDisplay() {
+            guessContainer.innerHTML = '';
+            const words = currentWord.split(' ');
+            words.forEach((word, wordIndex) => {
+                const wordSpan = document.createElement('span');
+                wordSpan.className = 'word-wrapper';
+                word.split('').forEach(letter => {
+                    const span = document.createElement('span');
+                    span.className = 'letter-space';
+                    span.textContent = guessedLetters.includes(letter.toUpperCase()) ? letter : '.';
+                    wordSpan.appendChild(span);
+                });
+                guessContainer.appendChild(wordSpan);
+                if (wordIndex < words.length - 1) {
+                    guessContainer.appendChild(document.createTextNode('\u00A0\u00A0\u00A0'));
+                }
+            });
+            attemptsRemaining.textContent = `Balloons remaining: ${attemptsLeft}`;
+        }
+
+        // Update balloon image
+        function updateImage() {
+            const stage = 7 - attemptsLeft;
+            balloonImage.src = balloonImages[stage];
+        }
+
+        // Guess letter
+        function guessLetter(letter) {
+            if (guessedLetters.includes(letter) || attemptsLeft <= 0) return;
+
+            guessedLetters.push(letter);
+            const btn = Array.from(lettersContainer.querySelectorAll('.letter-btn'))
+                .find(b => b.textContent === letter);
+
+            if (currentWord.toUpperCase().includes(letter)) {
+                btn.classList.add('correct');
+                correctSound.play();
+            } else {
+                btn.classList.add('incorrect');
+                attemptsLeft--;
+                updateImage();
+                wrongSound.play();
+            }
+
+            btn.disabled = true;
+            updateDisplay();
+            checkGameStatus();
+        }
+
+        // Check game status
+        function checkGameStatus() {
+            const currentDisplay = Array.from(guessContainer.querySelectorAll('.letter-space'))
+                .map(span => span.textContent).join('').replace(/\s+/g, ' ').trim();
+            
+            if (attemptsLeft <= 0) {
+                messagesContainer.textContent = `You Lose! The correct answer was: ${currentWord}`;
+                balloonImage.src = 'balloons0.png';
+                loseSound.play();
+                disableAllLetters();
+                nextBtn.style.display = currentWordIndex < wordQueue.length - 1 ? 'inline-block' : 'none';
+            } else if (!currentDisplay.includes('.')) {
+                messagesContainer.textContent = 'You Win!';
+                balloonImage.src = 'youwin.png';
+                winSound.play();
+                disableAllLetters();
+                nextBtn.style.display = currentWordIndex < wordQueue.length - 1 ? 'inline-block' : 'none';
+            }
+        }
+
+        // Disable all letters
+        function disableAllLetters() {
+            lettersContainer.querySelectorAll('.letter-btn').forEach(btn => {
+                btn.disabled = true;
+            });
+        }
+
+        // Clear queue
+        function clearQueue() {
+            wordQueue = [];
+            messagesContainer.textContent = 'Queue cleared! (0 items)';
+            wordInput.value = '';
+            guessContainer.innerHTML = '';
+            attemptsLeft = 7;
+            guessedLetters = [];
+            updateImage();
+            updateDisplay();
+            createLetterGrid();
+            nextBtn.style.display = 'none';
+        }
+
+        // Add to queue
+        function addToQueue() {
+            const newInput = wordInput.value.trim();
+            if (newInput) {
+                wordQueue.push(newInput);
+                messagesContainer.textContent = `Added to queue! Queue: ${wordQueue.length} items`;
+                wordInput.classList.remove('invalid');
+                wordInput.classList.add('valid');
+                setTimeout(() => wordInput.classList.remove('valid'), 1000);
+                wordInput.value = '';
+            } else {
+                messagesContainer.textContent = 'Please enter a word or phrase';
+                wordInput.classList.add('invalid');
+                setTimeout(() => wordInput.classList.remove('invalid'), 1000);
+            }
+        }
+
+        // Start game
+        function startGame() {
+            if (wordQueue.length === 0) {
+                messagesContainer.textContent = 'Please add items to the queue first!';
+                return;
+            }
+            
+            wordQueue = shuffleArray([...wordQueue]);
+            currentWordIndex = 0;
+            currentWord = wordQueue[currentWordIndex];
+            attemptsLeft = 7;
+            guessedLetters = [];
+            updateImage();
+            updateDisplay();
+            createLetterGrid();
+            messagesContainer.textContent = `Game started! Queue: ${wordQueue.length} items`;
+            nextBtn.style.display = 'none';
+        }
+
+        // Next word
+        function nextWord() {
+            currentWordIndex++;
+            if (currentWordIndex < wordQueue.length) {
+                currentWord = wordQueue[currentWordIndex];
+                attemptsLeft = 7;
+                guessedLetters = [];
+                updateImage();
+                updateDisplay();
+                createLetterGrid();
+                messagesContainer.textContent = `Next item! Queue: ${wordQueue.length} items`;
+                nextBtn.style.display = 'none';
+            }
+        }
+
+        // Event listeners
+        clearQueueBtn.addEventListener('click', clearQueue);
+        addQueueBtn.addEventListener('click', addToQueue);
+        startGameBtn.addEventListener('click', startGame);
+        nextBtn.addEventListener('click', nextWord);
+        wordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addToQueue();
+        });
+
+        // Initial setup
+        messagesContainer.textContent = 'Add words or phrases to start (0 items)';
+        attemptsRemaining.textContent = 'Balloons remaining: 7';
+        createLetterGrid();
+    </script>
+</body>
+</html>
