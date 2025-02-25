@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Blackboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #000;
+        }
+        #blackboard {
+            width: 100%;
+            height: calc(100% - 60px); /* Adjusted to accommodate buttons in one row */
+            background-color: #000;
+            color: #fff;
+            font-family: 'Lexend', sans-serif;
+            font-size: 56px; /* Default size (M) */
+            border: none;
+            outline: none;
+            padding: 20px;
+            resize: none;
+            box-sizing: border-box;
+            transition: font-size 0.2s ease-in-out;
+        }
+        .controls {
+            height: 60px;
+            background-color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+        }
+        button {
+            padding: 10px 20px;
+            font-family: 'Lexend', sans-serif;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #fff;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #ddd;
+        }
+        .export-button {
+            position: absolute;
+            right: 20px;
+        }
+        .open-button {
+            position: absolute;
+            right: 120px; /* Position to the left of the "Save" button */
+        }
+        .print-button {
+            position: absolute;
+            left: 20px; /* Position to the far left */
+        }
+        label[for="fileInput"] {
+            cursor: pointer;
+            padding: 10px 20px;
+            font-family: 'Lexend', sans-serif;
+            font-size: 16px;
+            background-color: #fff;
+            border: none;
+            border-radius: 5px;
+        }
+        label[for="fileInput"]:hover {
+            background-color: #ddd;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .light-mode {
+            background-color: #fff;
+        }
+        .light-mode #blackboard {
+            background-color: #eee;
+            color: #000;
+        }
+
+        .furigana {
+            font-size: 31.25% !important; /* Increase furigana size by 25% */
+            display: block;
+            text-align: center;
+            margin-top: -10px; /* Move it closer to the selected text */
+            margin-bottom: 5px;
+            cursor: pointer; /* Make furigana text editable */
+        }
+
+        /* Print-specific styles */
+        @media print {
+            body, html {
+                margin: 0;
+                padding: 0;
+                height: auto;
+            }
+            #blackboard {
+                font-size: 14px !important; /* Enforce font size to 14px */
+                padding: 10px;
+                background-color: #fff !important; /* Ensure white background for print */
+                color: #000 !important; /* Set text color to black */
+                width: 100%;
+                height: auto;
+            }
+            /* Hide the controls section during printing */
+            .controls {
+                display: none !important;
+            }
+
+            /* Disable printing of header and footer */
+            @page {
+                margin-top: 0;
+                margin-bottom: 0;
+                margin-left: 0;
+                margin-right: 0;
+            }
+
+            /* Hide any unwanted page elements (like date, time, title, URL) */
+            header, footer {
+                display: none;
+            }
+
+            /* Optional: Hide any page breaks in content */
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div contenteditable="true" id="blackboard" placeholder="Start typing here..."></div>
+    <div class="controls">
+        <!-- Print Button -->
+        <button class="print-button" onclick="prepareForPrint()">Print</button>
+
+        <button onclick="setFontSize(42)">S</button>
+        <button onclick="setFontSize(56)">M</button>
+        <button onclick="setFontSize(64)">L</button>
+        <button onclick="setFontSize(72)">XL</button>
+        <button onclick="setFontSize(96)">XXL</button>
+        <button onclick="toggleMode()">Dark/Light</button>
+        
+        <!-- Furigana Button (Toggle Behavior) -->
+        <button onclick="toggleFurigana()">Furigana</button>
+        
+        <!-- Red Color Toggle Button -->
+        <button onclick="toggleRedColor()">Red</button>
+        
+        <!-- New Highlight Toggle Button -->
+        <button onclick="toggleHighlight()">Highlight</button>
+
+        <!-- Open Button -->
+        <button class="open-button">
+            <input type="file" id="fileInput" accept=".docx" onchange="openFile(event)" />
+            <label for="fileInput">Open</label>
+        </button>
+        
+        <!-- Save Button -->
+        <button class="export-button" onclick="saveToDoc()">Save</button>
+    </div>
+    
+    <script>
+        const blackboard = document.getElementById('blackboard');
+
+        function setFontSize(size) {
+            blackboard.style.fontSize = `${size}px`;
+            localStorage.setItem('fontSize', size);
+        }
+
+        function toggleMode() {
+            document.body.classList.toggle('light-mode');
+            const isLightMode = document.body.classList.contains('light-mode');
+            localStorage.setItem('mode', isLightMode ? 'light' : 'dark');
+        }
+
+        function toggleFurigana() {
+            const selection = window.getSelection();
+            const selectedText = selection.toString();
+
+            if (selectedText) {
+                const furiganaElements = document.querySelectorAll('.furigana');
+                let furiganaFound = false;
+
+                // Check if the selected text already has furigana
+                furiganaElements.forEach(furigana => {
+                    if (furigana.previousSibling && furigana.previousSibling.nodeValue === selectedText) {
+                        furiganaFound = true;
+                        furigana.remove(); // Remove the furigana if found
+                    }
+                });
+
+                if (!furiganaFound) {
+                    // If no furigana found, add it
+                    const furiganaText = prompt('Enter Furigana text for "' + selectedText + '"');
+                    if (furiganaText === "") {
+                        // Remove furigana if the input is empty (without removing the selected text)
+                        const furiganaToRemove = document.querySelector('.furigana');
+                        if (furiganaToRemove) {
+                            furiganaToRemove.remove();
+                        }
+                    } else if (furiganaText) {
+                        const furiganaElement = document.createElement('span');
+                        furiganaElement.className = 'furigana';
+                        furiganaElement.textContent = furiganaText;
+
+                        const wrapper = document.createElement('span');
+                        wrapper.style.display = 'inline-block';
+                        wrapper.style.position = 'relative';
+
+                        wrapper.appendChild(furiganaElement);
+                        wrapper.appendChild(document.createTextNode(selectedText));
+
+                        // Replace selected text with the wrapper
+                        selection.deleteFromDocument();
+                        selection.getRangeAt(0).insertNode(wrapper);
+                    }
+                }
+            }
+        }
+
+        function toggleRedColor() {
+            const selection = window.getSelection();
+            const selectedText = selection.toString();
+
+            if (selectedText) {
+                const range = selection.getRangeAt(0);
+                const selectedNode = range.commonAncestorContainer;
+
+                // Check if the selected text is already wrapped in a span with red color
+                const parentSpan = selectedNode.parentElement;
+                if (parentSpan && parentSpan.tagName === 'SPAN' && parentSpan.style.color === 'red') {
+                    // If already red, remove the span and restore the original text
+                    const textNode = document.createTextNode(selectedText);
+                    parentSpan.replaceWith(textNode);
+                } else {
+                    // If not red, wrap the selection in a span with red color
+                    const span = document.createElement('span');
+                    span.style.color = 'red';
+                    span.textContent = selectedText;
+
+                    // Replace the selected text with the red-colored span
+                    selection.deleteFromDocument();
+                    range.insertNode(span);
+                }
+            }
+        }
+
+        function toggleHighlight() {
+            const selection = window.getSelection();
+            const selectedText = selection.toString();
+
+            if (selectedText) {
+                const range = selection.getRangeAt(0);
+                const selectedNode = range.commonAncestorContainer;
+
+                // Check if the selected text is already wrapped in a span with yellow highlight
+                const parentSpan = selectedNode.parentElement;
+                if (parentSpan && parentSpan.tagName === 'SPAN' && parentSpan.style.backgroundColor === 'rgba(255, 255, 0, 0.25)') {
+                    // If already highlighted, remove the span and restore the original text
+                    const textNode = document.createTextNode(selectedText);
+                    parentSpan.replaceWith(textNode);
+                } else {
+                    // If not highlighted, wrap the selection in a span with yellow highlight
+                    const span = document.createElement('span');
+                    span.style.backgroundColor = 'rgba(255, 255, 0, 0.25)'; // Yellow at 25% opacity
+                    span.textContent = selectedText;
+
+                    // Replace the selected text with the highlighted span
+                    selection.deleteFromDocument();
+                    range.insertNode(span);
+                }
+            }
+        }
+
+        function saveToDoc() {
+            let content = blackboard.innerHTML;
+            let blob = new Blob(['<html><body>' + content + '</body></html>'], { type: 'application/msword' });
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = url;
+            a.download = 'blackboard.docx';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function openFile(event) {
+            const file = event.target.files[0];
+            if (file && file.name.endsWith('.docx')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const fileContent = e.target.result;
+                    blackboard.innerHTML = fileContent;
+                };
+                reader.readAsText(file); // Reads the content as plain text for simplicity
+            }
+        }
+
+        function prepareForPrint() {
+            // Set font size to 14px before printing
+            blackboard.style.fontSize = '14px';
+            window.print();
+        }
+
+        window.onload = function() {
+            blackboard.focus();
+            const savedSize = localStorage.getItem('fontSize');
+            if (savedSize) {
+                blackboard.style.fontSize = `${savedSize}px`;
+            }
+            const savedMode = localStorage.getItem('mode');
+            if (savedMode === 'light') {
+                document.body.classList.add('light-mode');
+            }
+        };
+    </script>
+</body>
+</html>
