@@ -16,7 +16,7 @@
         }
         #blackboard {
             width: 100%;
-            height: calc(100% - 60px); /* Adjusted to accommodate buttons in one row */
+            height: calc(100vh - 60px); /* Adjust height to account for fixed toolbar */
             background-color: #000;
             color: #fff;
             font-family: 'Lexend', sans-serif;
@@ -27,6 +27,7 @@
             resize: none;
             box-sizing: border-box;
             transition: font-size 0.2s ease-in-out;
+            overflow-y: auto; /* Enable scrolling within the blackboard */
         }
         .controls {
             height: 60px;
@@ -35,12 +36,17 @@
             justify-content: center;
             align-items: center;
             gap: 20px;
-            position: relative;
+            position: fixed; /* Fix the toolbar to the bottom */
+            bottom: 0; /* Align it to the bottom of the viewport */
+            left: 0; /* Stretch it across the full width */
+            width: 100%; /* Ensure it spans the viewport */
+            box-sizing: border-box;
+            z-index: 1000; /* Ensure it stays above other content */
         }
         button {
-            padding: 10px 20px;
+            padding: 7.5px 15px; /* Reduced by 25% from 10px 20px */
             font-family: 'Lexend', sans-serif;
-            font-size: 16px;
+            font-size: 12px; /* Reduced by 25% from 16px */
             cursor: pointer;
             background-color: #fff;
             border: none;
@@ -63,9 +69,9 @@
         }
         label[for="fileInput"] {
             cursor: pointer;
-            padding: 10px 20px;
+            padding: 7.5px 15px; /* Reduced by 25% from 10px 20px */
             font-family: 'Lexend', sans-serif;
-            font-size: 16px;
+            font-size: 12px; /* Reduced by 25% from 16px */
             background-color: #fff;
             border: none;
             border-radius: 5px;
@@ -108,25 +114,18 @@
                 width: 100%;
                 height: auto;
             }
-            /* Hide the controls section during printing */
             .controls {
-                display: none !important;
+                display: none !important; /* Hide controls during printing */
             }
-
-            /* Disable printing of header and footer */
             @page {
                 margin-top: 0;
                 margin-bottom: 0;
                 margin-left: 0;
                 margin-right: 0;
             }
-
-            /* Hide any unwanted page elements (like date, time, title, URL) */
             header, footer {
                 display: none;
             }
-
-            /* Optional: Hide any page breaks in content */
             .no-print {
                 display: none !important;
             }
@@ -139,8 +138,9 @@
         <!-- Print Button -->
         <button class="print-button" onclick="prepareForPrint()">Print</button>
 
-        <button onclick="setFontSize(42)">S</button>
-        <button onclick="setFontSize(56)">M</button>
+        <button onclick="setFontSize(24)">XS</button>
+        <button onclick="setFontSize(36)">S</button>
+        <button onclick="setFontSize(48)">M</button>
         <button onclick="setFontSize(64)">L</button>
         <button onclick="setFontSize(72)">XL</button>
         <button onclick="setFontSize(96)">XXL</button>
@@ -152,7 +152,7 @@
         <!-- Red Color Toggle Button -->
         <button onclick="toggleRedColor()">Red</button>
         
-        <!-- New Highlight Toggle Button -->
+        <!-- Highlight Toggle Button -->
         <button onclick="toggleHighlight()">Highlight</button>
 
         <!-- Open Button -->
@@ -165,6 +165,7 @@
         <button class="export-button" onclick="saveToDoc()">Save</button>
     </div>
     
+    <!-- JavaScript remains unchanged -->
     <script>
         const blackboard = document.getElementById('blackboard');
 
@@ -187,19 +188,16 @@
                 const furiganaElements = document.querySelectorAll('.furigana');
                 let furiganaFound = false;
 
-                // Check if the selected text already has furigana
                 furiganaElements.forEach(furigana => {
                     if (furigana.previousSibling && furigana.previousSibling.nodeValue === selectedText) {
                         furiganaFound = true;
-                        furigana.remove(); // Remove the furigana if found
+                        furigana.remove();
                     }
                 });
 
                 if (!furiganaFound) {
-                    // If no furigana found, add it
                     const furiganaText = prompt('Enter Furigana text for "' + selectedText + '"');
                     if (furiganaText === "") {
-                        // Remove furigana if the input is empty (without removing the selected text)
                         const furiganaToRemove = document.querySelector('.furigana');
                         if (furiganaToRemove) {
                             furiganaToRemove.remove();
@@ -216,7 +214,6 @@
                         wrapper.appendChild(furiganaElement);
                         wrapper.appendChild(document.createTextNode(selectedText));
 
-                        // Replace selected text with the wrapper
                         selection.deleteFromDocument();
                         selection.getRangeAt(0).insertNode(wrapper);
                     }
@@ -232,19 +229,15 @@
                 const range = selection.getRangeAt(0);
                 const selectedNode = range.commonAncestorContainer;
 
-                // Check if the selected text is already wrapped in a span with red color
                 const parentSpan = selectedNode.parentElement;
                 if (parentSpan && parentSpan.tagName === 'SPAN' && parentSpan.style.color === 'red') {
-                    // If already red, remove the span and restore the original text
                     const textNode = document.createTextNode(selectedText);
                     parentSpan.replaceWith(textNode);
                 } else {
-                    // If not red, wrap the selection in a span with red color
                     const span = document.createElement('span');
                     span.style.color = 'red';
                     span.textContent = selectedText;
 
-                    // Replace the selected text with the red-colored span
                     selection.deleteFromDocument();
                     range.insertNode(span);
                 }
@@ -259,19 +252,15 @@
                 const range = selection.getRangeAt(0);
                 const selectedNode = range.commonAncestorContainer;
 
-                // Check if the selected text is already wrapped in a span with yellow highlight
                 const parentSpan = selectedNode.parentElement;
                 if (parentSpan && parentSpan.tagName === 'SPAN' && parentSpan.style.backgroundColor === 'rgba(255, 255, 0, 0.25)') {
-                    // If already highlighted, remove the span and restore the original text
                     const textNode = document.createTextNode(selectedText);
                     parentSpan.replaceWith(textNode);
                 } else {
-                    // If not highlighted, wrap the selection in a span with yellow highlight
                     const span = document.createElement('span');
-                    span.style.backgroundColor = 'rgba(255, 255, 0, 0.25)'; // Yellow at 25% opacity
+                    span.style.backgroundColor = 'rgba(255, 255, 0, 0.25)';
                     span.textContent = selectedText;
 
-                    // Replace the selected text with the highlighted span
                     selection.deleteFromDocument();
                     range.insertNode(span);
                 }
@@ -298,12 +287,11 @@
                     const fileContent = e.target.result;
                     blackboard.innerHTML = fileContent;
                 };
-                reader.readAsText(file); // Reads the content as plain text for simplicity
+                reader.readAsText(file);
             }
         }
 
         function prepareForPrint() {
-            // Set font size to 14px before printing
             blackboard.style.fontSize = '14px';
             window.print();
         }
