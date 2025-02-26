@@ -101,25 +101,26 @@
         /* Print-specific styles */
         @media print {
             body, html {
-                margin: 0;
-                padding: 0;
+                margin: 0 !important;
+                padding: 0 !important;
                 height: auto;
+                width: 100%;
             }
             #blackboard {
                 font-family: 'Lexend', sans-serif !important; /* Enforce Lexend font */
                 font-size: 20px !important; /* Set to 20px */
-                padding: 0; /* Remove padding for print */
+                padding: 0 !important; /* Remove padding for print */
                 background-color: #fff !important; /* White background */
                 color: #000 !important; /* Black text */
                 width: 100%;
                 height: auto;
-                margin: 0; /* Reset default margins */
+                margin: 0 !important; /* Reset default margins */
             }
             .controls {
                 display: none !important; /* Hide controls */
             }
             header, footer {
-                display: none !important; /* Explicitly hide header and footer elements */
+                display: none !important; /* Hide any header/footer elements */
             }
             .no-print {
                 display: none !important;
@@ -267,7 +268,7 @@
             // Ensure Lexend font is applied
             blackboard.style.fontFamily = "'Lexend', sans-serif";
 
-            // Create a style element for print margins and header/footer removal
+            // Create a style element for print settings
             const printStyle = document.createElement('style');
             printStyle.id = 'printMargins';
             printStyle.textContent = `
@@ -276,13 +277,20 @@
                         size: A4;
                         margin: 0.75in; /* 0.75-inch margins */
                     }
-                    /* Explicitly remove browser headers and footers */
+                    /* Attempt to suppress browser headers and footers */
+                    body {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
                     header, footer {
                         display: none !important;
                     }
                 }
             `;
             document.head.appendChild(printStyle);
+
+            // Optional: Alert user to disable headers/footers in print dialog
+            alert("For best results, please disable 'Headers and Footers' in your browser's print settings.");
 
             // Trigger the print dialog
             window.print();
