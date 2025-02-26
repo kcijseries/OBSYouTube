@@ -107,7 +107,7 @@
             }
             #blackboard {
                 font-family: 'Lexend', sans-serif !important; /* Enforce Lexend font */
-                font-size: 16px !important; /* Enforce 16px font size */
+                font-size: 24px !important; /* Enforce 24px font size */
                 padding: 0; /* Remove padding for print */
                 background-color: #fff !important; /* White background */
                 color: #000 !important; /* Black text */
@@ -120,7 +120,7 @@
             }
             @page {
                 size: A4; /* Set page size to A4 */
-                margin: 0.5in; /* Set 0.5-inch margin all around */
+                margin: 1in; /* Set 1-inch margin all around */
             }
             header, footer {
                 display: none;
@@ -266,8 +266,8 @@
         }
 
         function prepareForPrint() {
-            // Set font size to 16px for printing
-            blackboard.style.fontSize = '16px';
+            // Set font size to 24px for printing
+            blackboard.style.fontSize = '24px';
             // Ensure Lexend font is applied (already set in CSS, but reinforcing here)
             blackboard.style.fontFamily = "'Lexend', sans-serif";
             // Trigger the print dialog
