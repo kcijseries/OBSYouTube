@@ -107,7 +107,7 @@
             }
             #blackboard {
                 font-family: 'Lexend', sans-serif !important; /* Enforce Lexend font */
-                font-size: 20px !important; /* Set to 20px as requested */
+                font-size: 20px !important; /* Set to 20px */
                 padding: 0; /* Remove padding for print */
                 background-color: #fff !important; /* White background */
                 color: #000 !important; /* Black text */
@@ -119,7 +119,7 @@
                 display: none !important; /* Hide controls */
             }
             header, footer {
-                display: none;
+                display: none !important; /* Explicitly hide header and footer elements */
             }
             .no-print {
                 display: none !important;
@@ -267,14 +267,18 @@
             // Ensure Lexend font is applied
             blackboard.style.fontFamily = "'Lexend', sans-serif";
 
-            // Create a style element for print margins
+            // Create a style element for print margins and header/footer removal
             const printStyle = document.createElement('style');
             printStyle.id = 'printMargins';
             printStyle.textContent = `
                 @media print {
                     @page {
                         size: A4;
-                        margin: 0.75in;
+                        margin: 0.75in; /* 0.75-inch margins */
+                    }
+                    /* Explicitly remove browser headers and footers */
+                    header, footer {
+                        display: none !important;
                     }
                 }
             `;
