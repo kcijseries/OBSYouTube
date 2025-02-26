@@ -16,18 +16,18 @@
         }
         #blackboard {
             width: 100%;
-            height: calc(100vh - 60px); /* Adjust height to account for fixed toolbar */
+            height: calc(100vh - 60px);
             background-color: #000;
             color: #fff;
             font-family: 'Lexend', sans-serif;
-            font-size: 56px; /* Default size (M) */
+            font-size: 56px;
             border: none;
             outline: none;
             padding: 20px;
             resize: none;
             box-sizing: border-box;
             transition: font-size 0.2s ease-in-out;
-            overflow-y: auto; /* Enable scrolling within the blackboard */
+            overflow-y: auto;
         }
         .controls {
             height: 60px;
@@ -36,17 +36,17 @@
             justify-content: center;
             align-items: center;
             gap: 20px;
-            position: fixed; /* Fix the toolbar to the bottom */
-            bottom: 0; /* Align it to the bottom of the viewport */
-            left: 0; /* Stretch it across the full width */
-            width: 100%; /* Ensure it spans the viewport */
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
             box-sizing: border-box;
-            z-index: 1000; /* Ensure it stays above other content */
+            z-index: 1000;
         }
         button {
-            padding: 7.5px 15px; /* Reduced by 25% from 10px 20px */
+            padding: 7.5px 15px;
             font-family: 'Lexend', sans-serif;
-            font-size: 12px; /* Reduced by 25% from 16px */
+            font-size: 12px;
             cursor: pointer;
             background-color: #fff;
             border: none;
@@ -61,17 +61,17 @@
         }
         .open-button {
             position: absolute;
-            right: 120px; /* Position to the left of the "Save" button */
+            right: 120px;
         }
         .print-button {
             position: absolute;
-            left: 20px; /* Position to the far left */
+            left: 20px;
         }
         label[for="fileInput"] {
             cursor: pointer;
-            padding: 7.5px 15px; /* Reduced by 25% from 10px 20px */
+            padding: 7.5px 15px;
             font-family: 'Lexend', sans-serif;
-            font-size: 12px; /* Reduced by 25% from 16px */
+            font-size: 12px;
             background-color: #fff;
             border: none;
             border-radius: 5px;
@@ -89,14 +89,13 @@
             background-color: #eee;
             color: #000;
         }
-
         .furigana {
-            font-size: 31.25% !important; /* Increase furigana size by 25% */
+            font-size: 31.25% !important;
             display: block;
             text-align: center;
-            margin-top: -10px; /* Move it closer to the selected text */
+            margin-top: -10px;
             margin-bottom: 5px;
-            cursor: pointer; /* Make furigana text editable */
+            cursor: pointer;
         }
 
         /* Print-specific styles */
@@ -107,21 +106,21 @@
                 height: auto;
             }
             #blackboard {
-                font-size: 14px !important; /* Enforce font size to 14px */
-                padding: 10px;
-                background-color: #fff !important; /* Ensure white background for print */
-                color: #000 !important; /* Set text color to black */
+                font-family: 'Lexend', sans-serif !important; /* Enforce Lexend font */
+                font-size: 16px !important; /* Enforce 16px font size */
+                padding: 0; /* Remove padding for print */
+                background-color: #fff !important; /* White background */
+                color: #000 !important; /* Black text */
                 width: 100%;
                 height: auto;
+                margin: 0; /* Reset default margins */
             }
             .controls {
-                display: none !important; /* Hide controls during printing */
+                display: none !important; /* Hide controls */
             }
             @page {
-                margin-top: 0;
-                margin-bottom: 0;
-                margin-left: 0;
-                margin-right: 0;
+                size: A4; /* Set page size to A4 */
+                margin: 0.5in; /* Set 0.5-inch margin all around */
             }
             header, footer {
                 display: none;
@@ -135,9 +134,7 @@
 <body>
     <div contenteditable="true" id="blackboard" placeholder="Start typing here..."></div>
     <div class="controls">
-        <!-- Print Button -->
         <button class="print-button" onclick="prepareForPrint()">Print</button>
-
         <button onclick="setFontSize(24)">XS</button>
         <button onclick="setFontSize(36)">S</button>
         <button onclick="setFontSize(48)">M</button>
@@ -145,27 +142,16 @@
         <button onclick="setFontSize(72)">XL</button>
         <button onclick="setFontSize(96)">XXL</button>
         <button onclick="toggleMode()">Dark/Light</button>
-        
-        <!-- Furigana Button (Toggle Behavior) -->
         <button onclick="toggleFurigana()">Furigana</button>
-        
-        <!-- Red Color Toggle Button -->
         <button onclick="toggleRedColor()">Red</button>
-        
-        <!-- Highlight Toggle Button -->
         <button onclick="toggleHighlight()">Highlight</button>
-
-        <!-- Open Button -->
         <button class="open-button">
             <input type="file" id="fileInput" accept=".docx" onchange="openFile(event)" />
             <label for="fileInput">Open</label>
         </button>
-        
-        <!-- Save Button -->
         <button class="export-button" onclick="saveToDoc()">Save</button>
     </div>
-    
-    <!-- JavaScript remains unchanged -->
+
     <script>
         const blackboard = document.getElementById('blackboard');
 
@@ -183,18 +169,15 @@
         function toggleFurigana() {
             const selection = window.getSelection();
             const selectedText = selection.toString();
-
             if (selectedText) {
                 const furiganaElements = document.querySelectorAll('.furigana');
                 let furiganaFound = false;
-
                 furiganaElements.forEach(furigana => {
                     if (furigana.previousSibling && furigana.previousSibling.nodeValue === selectedText) {
                         furiganaFound = true;
                         furigana.remove();
                     }
                 });
-
                 if (!furiganaFound) {
                     const furiganaText = prompt('Enter Furigana text for "' + selectedText + '"');
                     if (furiganaText === "") {
@@ -206,14 +189,11 @@
                         const furiganaElement = document.createElement('span');
                         furiganaElement.className = 'furigana';
                         furiganaElement.textContent = furiganaText;
-
                         const wrapper = document.createElement('span');
                         wrapper.style.display = 'inline-block';
                         wrapper.style.position = 'relative';
-
                         wrapper.appendChild(furiganaElement);
                         wrapper.appendChild(document.createTextNode(selectedText));
-
                         selection.deleteFromDocument();
                         selection.getRangeAt(0).insertNode(wrapper);
                     }
@@ -224,11 +204,9 @@
         function toggleRedColor() {
             const selection = window.getSelection();
             const selectedText = selection.toString();
-
             if (selectedText) {
                 const range = selection.getRangeAt(0);
                 const selectedNode = range.commonAncestorContainer;
-
                 const parentSpan = selectedNode.parentElement;
                 if (parentSpan && parentSpan.tagName === 'SPAN' && parentSpan.style.color === 'red') {
                     const textNode = document.createTextNode(selectedText);
@@ -237,7 +215,6 @@
                     const span = document.createElement('span');
                     span.style.color = 'red';
                     span.textContent = selectedText;
-
                     selection.deleteFromDocument();
                     range.insertNode(span);
                 }
@@ -247,11 +224,9 @@
         function toggleHighlight() {
             const selection = window.getSelection();
             const selectedText = selection.toString();
-
             if (selectedText) {
                 const range = selection.getRangeAt(0);
                 const selectedNode = range.commonAncestorContainer;
-
                 const parentSpan = selectedNode.parentElement;
                 if (parentSpan && parentSpan.tagName === 'SPAN' && parentSpan.style.backgroundColor === 'rgba(255, 255, 0, 0.25)') {
                     const textNode = document.createTextNode(selectedText);
@@ -260,7 +235,6 @@
                     const span = document.createElement('span');
                     span.style.backgroundColor = 'rgba(255, 255, 0, 0.25)';
                     span.textContent = selectedText;
-
                     selection.deleteFromDocument();
                     range.insertNode(span);
                 }
@@ -292,7 +266,11 @@
         }
 
         function prepareForPrint() {
-            blackboard.style.fontSize = '14px';
+            // Set font size to 16px for printing
+            blackboard.style.fontSize = '16px';
+            // Ensure Lexend font is applied (already set in CSS, but reinforcing here)
+            blackboard.style.fontFamily = "'Lexend', sans-serif";
+            // Trigger the print dialog
             window.print();
         }
 
