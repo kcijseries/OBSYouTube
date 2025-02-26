@@ -107,7 +107,7 @@
             }
             #blackboard {
                 font-family: 'Lexend', sans-serif !important; /* Enforce Lexend font */
-                font-size: 24px !important; /* Enforce 24px font size */
+                font-size: 20px !important; /* Set to 20px as requested */
                 padding: 0; /* Remove padding for print */
                 background-color: #fff !important; /* White background */
                 color: #000 !important; /* Black text */
@@ -117,10 +117,6 @@
             }
             .controls {
                 display: none !important; /* Hide controls */
-            }
-            @page {
-                size: A4; /* Set page size to A4 */
-                margin: 1in; /* Set 1-inch margin all around */
             }
             header, footer {
                 display: none;
@@ -266,12 +262,31 @@
         }
 
         function prepareForPrint() {
-            // Set font size to 24px for printing
-            blackboard.style.fontSize = '24px';
-            // Ensure Lexend font is applied (already set in CSS, but reinforcing here)
+            // Set font size to 20px for printing
+            blackboard.style.fontSize = '20px';
+            // Ensure Lexend font is applied
             blackboard.style.fontFamily = "'Lexend', sans-serif";
+
+            // Create a style element for print margins
+            const printStyle = document.createElement('style');
+            printStyle.id = 'printMargins';
+            printStyle.textContent = `
+                @media print {
+                    @page {
+                        size: A4;
+                        margin: 0.75in;
+                    }
+                }
+            `;
+            document.head.appendChild(printStyle);
+
             // Trigger the print dialog
             window.print();
+
+            // Clean up: Remove the print style after printing
+            setTimeout(() => {
+                document.head.removeChild(printStyle);
+            }, 100); // Small delay to ensure print dialog has opened
         }
 
         window.onload = function() {
