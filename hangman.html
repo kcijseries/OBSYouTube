@@ -25,7 +25,7 @@
         }
 
         #picturecontainer {
-            width: 400px; /* Scaled down from 500px to give more room */
+            width: 400px;
             max-width: 100%;
             flex-shrink: 0;
         }
@@ -38,7 +38,7 @@
 
         #gamecontainer {
             flex-grow: 1;
-            max-width: calc(100% - 430px); /* Adjusted for new picture width (400px + 30px gap) */
+            max-width: calc(100% - 430px);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -60,6 +60,14 @@
             width: 100%;
         }
 
+        #queue-counter {
+            font-size: 24px;
+            color: #ffffff;
+            text-align: center;
+            width: 100%;
+            letter-spacing: 2px;
+        }
+
         #guesscontainer {
             font-size: 54px;
             letter-spacing: 5px;
@@ -74,7 +82,7 @@
         }
 
         .word-wrapper {
-            white-space: nowrap; /* Prevents word splitting */
+            white-space: nowrap;
         }
 
         .letter-space {
@@ -88,7 +96,7 @@
             display: grid;
             grid-template-rows: repeat(4, 1fr);
             gap: 10px;
-            max-width: 562.5px; /* Increased from 450px by 25% */
+            max-width: 562.5px;
             width: 100%;
         }
 
@@ -191,7 +199,7 @@
             }
             #picturecontainer {
                 width: 100%;
-                max-width: 400px; /* Adjusted for new size */
+                max-width: 400px;
             }
             #gamecontainer {
                 max-width: 100%;
@@ -213,6 +221,7 @@
         <div id="gamecontainer">
             <div id="messagescontainer"></div>
             <div id="attempts-remaining"></div>
+            <div id="queue-counter"></div>
             <div id="guesscontainer"></div>
             <div id="letterscontainer"></div>
             <div id="inputcontainer">
@@ -229,6 +238,7 @@
     <audio id="wrong-sound" src="wrong.mp3"></audio>
     <audio id="win-sound" src="youwin.mp3"></audio>
     <audio id="lose-sound" src="youlose.mp3"></audio>
+    <audio id="background-sound" src="silence.mp3" loop></audio>
 
     <script>
         let wordQueue = [];
@@ -255,12 +265,14 @@
         const addQueueBtn = document.getElementById('add-queue');
         const startGameBtn = document.getElementById('start-game');
         const nextBtn = document.getElementById('next-btn');
+        const queueCounter = document.getElementById('queue-counter');
 
         // Audio elements
         const correctSound = document.getElementById('correct-sound');
         const wrongSound = document.getElementById('wrong-sound');
         const winSound = document.getElementById('win-sound');
         const loseSound = document.getElementById('lose-sound');
+        const backgroundSound = document.getElementById('background-sound');
 
         // Initialize letter grid
         function createLetterGrid() {
@@ -294,17 +306,21 @@
             return array;
         }
 
-        // Update display
+        // Update display with punctuation
         function updateDisplay() {
             guessContainer.innerHTML = '';
             const words = currentWord.split(' ');
             words.forEach((word, wordIndex) => {
                 const wordSpan = document.createElement('span');
                 wordSpan.className = 'word-wrapper';
-                word.split('').forEach(letter => {
+                word.split('').forEach(char => {
                     const span = document.createElement('span');
                     span.className = 'letter-space';
-                    span.textContent = guessedLetters.includes(letter.toUpperCase()) ? letter : '.';
+                    if (/[a-zA-Z0-9]/.test(char)) {
+                        span.textContent = guessedLetters.includes(char.toUpperCase()) ? char : '.';
+                    } else {
+                        span.textContent = char;
+                    }
                     wordSpan.appendChild(span);
                 });
                 guessContainer.appendChild(wordSpan);
@@ -371,18 +387,27 @@
             });
         }
 
+        // Update queue counter
+        function updateQueueCounter() {
+            const currentDisplay = wordQueue.length > 0 ? (currentWordIndex + 1).toString().padStart(2, '0') : '00';
+            const totalDisplay = wordQueue.length.toString().padStart(2, '0');
+            queueCounter.textContent = `${currentDisplay}/${totalDisplay}`;
+        }
+
         // Clear queue
         function clearQueue() {
             wordQueue = [];
-            messagesContainer.textContent = 'Queue cleared! (0 items)';
+            messagesContainer.textContent = 'Queue cleared!';
             wordInput.value = '';
             guessContainer.innerHTML = '';
             attemptsLeft = 7;
             guessedLetters = [];
+            currentWordIndex = 0;
             updateImage();
             updateDisplay();
             createLetterGrid();
             nextBtn.style.display = 'none';
+            updateQueueCounter();
         }
 
         // Add to queue
@@ -390,11 +415,12 @@
             const newInput = wordInput.value.trim();
             if (newInput) {
                 wordQueue.push(newInput);
-                messagesContainer.textContent = `Added to queue! Queue: ${wordQueue.length} items`;
+                messagesContainer.textContent = `Added to queue!`;
                 wordInput.classList.remove('invalid');
                 wordInput.classList.add('valid');
                 setTimeout(() => wordInput.classList.remove('valid'), 1000);
                 wordInput.value = '';
+                updateQueueCounter();
             } else {
                 messagesContainer.textContent = 'Please enter a word or phrase';
                 wordInput.classList.add('invalid');
@@ -417,8 +443,9 @@
             updateImage();
             updateDisplay();
             createLetterGrid();
-            messagesContainer.textContent = `Game started! Queue: ${wordQueue.length} items`;
+            messagesContainer.textContent = `Game started!`;
             nextBtn.style.display = 'none';
+            updateQueueCounter();
         }
 
         // Next word
@@ -431,9 +458,10 @@
                 updateImage();
                 updateDisplay();
                 createLetterGrid();
-                messagesContainer.textContent = `Next item! Queue: ${wordQueue.length} items`;
+                messagesContainer.textContent = `Next item!`;
                 nextBtn.style.display = 'none';
             }
+            updateQueueCounter();
         }
 
         // Event listeners
@@ -446,9 +474,13 @@
         });
 
         // Initial setup
-        messagesContainer.textContent = 'Add words or phrases to start (0 items)';
+        messagesContainer.textContent = 'Add words or phrases to start';
         attemptsRemaining.textContent = 'Balloons remaining: 7';
+        updateQueueCounter();
         createLetterGrid();
+        backgroundSound.play().catch(error => {
+            console.log('Background audio playback failed:', error);
+        });
     </script>
 </body>
 </html>
