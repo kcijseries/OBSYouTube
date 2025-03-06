@@ -9,7 +9,7 @@
         body {
             font-family: 'Lexend', sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 20px 20px 20px 0; /* Changed from 20px on all sides to 0 on left */
             display: flex;
             justify-content: center;
             background-color: #000000;
@@ -21,13 +21,14 @@
             gap: 30px;
             max-width: 1200px;
             width: 100%;
-            justify-content: flex-start;
+            /* Removed justify-content: flex-start */
         }
 
         #picturecontainer {
             width: 400px;
             max-width: 100%;
             flex-shrink: 0;
+            margin-left: 0; /* Ensure it touches the left edge */
         }
 
         #balloon-image {
@@ -38,7 +39,7 @@
 
         #gamecontainer {
             flex-grow: 1;
-            max-width: calc(100% - 430px);
+            max-width: calc(100% - 400px); /* Adjusted from 430px to 400px since no left padding */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -63,9 +64,9 @@
         #queue-counter {
             font-size: 24px;
             color: #ffffff;
-            text-align: center;
-            width: 100%;
             letter-spacing: 2px;
+            align-self: center;
+            margin-right: 10px;
         }
 
         #guesscontainer {
@@ -147,6 +148,7 @@
             flex-wrap: wrap;
             justify-content: center;
             width: 100%;
+            align-items: center;
         }
 
         #word-input {
@@ -169,8 +171,8 @@
         }
 
         button {
-            padding: 10px 20px;
-            font-size: 16px;
+            padding: 7.5px 15px;
+            font-size: 12px;
             background-color: #2196F3;
             color: white;
             border: none;
@@ -210,6 +212,10 @@
             .letter-space {
                 width: clamp(30px, 6vw, 45px);
             }
+            #queue-counter {
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
         }
     </style>
 </head>
@@ -221,10 +227,10 @@
         <div id="gamecontainer">
             <div id="messagescontainer"></div>
             <div id="attempts-remaining"></div>
-            <div id="queue-counter"></div>
             <div id="guesscontainer"></div>
             <div id="letterscontainer"></div>
             <div id="inputcontainer">
+                <div id="queue-counter"></div>
                 <input type="text" id="word-input" placeholder="Enter word or phrase">
                 <button id="clear-queue">Clear Queue</button>
                 <button id="add-queue">Add To Queue</button>
@@ -233,12 +239,6 @@
             </div>
         </div>
     </div>
-
-    <audio id="correct-sound" src="correct.mp3"></audio>
-    <audio id="wrong-sound" src="wrong.mp3"></audio>
-    <audio id="win-sound" src="youwin.mp3"></audio>
-    <audio id="lose-sound" src="youlose.mp3"></audio>
-    <audio id="background-sound" src="silence.mp3" loop></audio>
 
     <script>
         let wordQueue = [];
@@ -267,12 +267,22 @@
         const nextBtn = document.getElementById('next-btn');
         const queueCounter = document.getElementById('queue-counter');
 
-        // Audio elements
-        const correctSound = document.getElementById('correct-sound');
-        const wrongSound = document.getElementById('wrong-sound');
-        const winSound = document.getElementById('win-sound');
-        const loseSound = document.getElementById('lose-sound');
-        const backgroundSound = document.getElementById('background-sound');
+        // Sound file paths
+        const soundFiles = {
+            correct: 'correct.mp3',
+            wrong: 'wrong.mp3',
+            win: 'youwin.mp3',
+            lose: 'youlose.mp3',
+            background: 'silence.mp3'
+        };
+
+        // Function to play a sound
+        function playSound(soundKey) {
+            const audio = new Audio(soundFiles[soundKey]);
+            audio.play().catch(error => {
+                console.log(`Error playing ${soundKey} sound:`, error);
+            });
+        }
 
         // Initialize letter grid
         function createLetterGrid() {
@@ -347,12 +357,12 @@
 
             if (currentWord.toUpperCase().includes(letter)) {
                 btn.classList.add('correct');
-                correctSound.play();
+                playSound('correct');
             } else {
                 btn.classList.add('incorrect');
                 attemptsLeft--;
                 updateImage();
-                wrongSound.play();
+                playSound('wrong');
             }
 
             btn.disabled = true;
@@ -368,13 +378,13 @@
             if (attemptsLeft <= 0) {
                 messagesContainer.textContent = `You Lose! The correct answer was: ${currentWord}`;
                 balloonImage.src = 'balloons0.png';
-                loseSound.play();
+                playSound('lose');
                 disableAllLetters();
                 nextBtn.style.display = currentWordIndex < wordQueue.length - 1 ? 'inline-block' : 'none';
             } else if (!currentDisplay.includes('.')) {
                 messagesContainer.textContent = 'You Win!';
                 balloonImage.src = 'youwin.png';
-                winSound.play();
+                playSound('win');
                 disableAllLetters();
                 nextBtn.style.display = currentWordIndex < wordQueue.length - 1 ? 'inline-block' : 'none';
             }
@@ -478,7 +488,9 @@
         attemptsRemaining.textContent = 'Balloons remaining: 7';
         updateQueueCounter();
         createLetterGrid();
-        backgroundSound.play().catch(error => {
+        const backgroundAudio = new Audio(soundFiles.background);
+        backgroundAudio.loop = true;
+        backgroundAudio.play().catch(error => {
             console.log('Background audio playback failed:', error);
         });
     </script>
