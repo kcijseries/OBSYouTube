@@ -9,7 +9,7 @@
         body {
             font-family: 'Lexend', sans-serif;
             margin: 0;
-            padding: 20px 20px 20px 0; /* Changed from 20px on all sides to 0 on left */
+            padding: 20px 20px 20px 0;
             display: flex;
             justify-content: center;
             background-color: #000000;
@@ -21,14 +21,13 @@
             gap: 30px;
             max-width: 1200px;
             width: 100%;
-            /* Removed justify-content: flex-start */
         }
 
         #picturecontainer {
             width: 400px;
             max-width: 100%;
             flex-shrink: 0;
-            margin-left: 0; /* Ensure it touches the left edge */
+            margin-left: 0;
         }
 
         #balloon-image {
@@ -39,7 +38,7 @@
 
         #gamecontainer {
             flex-grow: 1;
-            max-width: calc(100% - 400px); /* Adjusted from 430px to 400px since no left padding */
+            max-width: calc(100% - 400px);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -236,6 +235,7 @@
                 <button id="add-queue">Add To Queue</button>
                 <button id="start-game">Start Game</button>
                 <button id="next-btn">Next</button>
+                <button id="hint-btn">Hint</button>
             </div>
         </div>
     </div>
@@ -265,22 +265,55 @@
         const addQueueBtn = document.getElementById('add-queue');
         const startGameBtn = document.getElementById('start-game');
         const nextBtn = document.getElementById('next-btn');
+        const hintBtn = document.getElementById('hint-btn');
         const queueCounter = document.getElementById('queue-counter');
 
-        // Sound file paths
+        // Audio files
         const soundFiles = {
-            correct: 'correct.mp3',
-            wrong: 'wrong.mp3',
-            win: 'youwin.mp3',
-            lose: 'youlose.mp3',
-            background: 'silence.mp3'
+            correct: ['correct.mp3', 'correct.ogg'],
+            wrong: ['wrong.mp3', 'wrong.ogg'],
+            win: ['youwin.mp3', 'youwin.ogg'],
+            lose: ['youlose.mp3', 'youlose.ogg'],
+            background: ['silence.mp3', 'silence.ogg']
         };
 
-        // Function to play a sound
+        // Audio player with fallback support
+        class AudioPlayer {
+            constructor(fileArray, loop = false) {
+                this.files = fileArray;
+                this.currentIndex = 0;
+                this.audio = new Audio(this.files[this.currentIndex]);
+                this.audio.loop = loop;
+            }
+
+            play() {
+                return this.audio.play().catch(error => {
+                    console.log(`Audio error with ${this.files[this.currentIndex]}:`, error);
+                    this.currentIndex++;
+                    if (this.currentIndex < this.files.length) {
+                        this.audio = new Audio(this.files[this.currentIndex]);
+                        this.audio.loop = this.audio.loop; // Preserve loop setting
+                        return this.play(); // Try next format
+                    }
+                    return Promise.reject('All audio formats failed');
+                });
+            }
+        }
+
         function playSound(soundKey) {
-            const audio = new Audio(soundFiles[soundKey]);
-            audio.play().catch(error => {
-                console.log(`Error playing ${soundKey} sound:`, error);
+            const player = new AudioPlayer(soundFiles[soundKey]);
+            player.play().catch(error => {
+                console.log(`Failed to play ${soundKey} sound:`, error);
+                // Fallback to simple beep if all formats fail
+                if ('AudioContext' in window) {
+                    const ctx = new AudioContext();
+                    const osc = ctx.createOscillator();
+                    osc.type = 'square';
+                    osc.frequency.value = soundKey === 'correct' || soundKey === 'win' ? 440 : 220;
+                    osc.connect(ctx.destination);
+                    osc.start();
+                    setTimeout(() => osc.stop(), 200);
+                }
             });
         }
 
@@ -327,7 +360,7 @@
                     const span = document.createElement('span');
                     span.className = 'letter-space';
                     if (/[a-zA-Z0-9]/.test(char)) {
-                        span.textContent = guessedLetters.includes(char.toUpperCase()) ? char : '.';
+                        span.textContent = guessedLetters.includes(char.toUpperCase()) ? char : '*';
                     } else {
                         span.textContent = char;
                     }
@@ -381,12 +414,14 @@
                 playSound('lose');
                 disableAllLetters();
                 nextBtn.style.display = currentWordIndex < wordQueue.length - 1 ? 'inline-block' : 'none';
-            } else if (!currentDisplay.includes('.')) {
+                hintBtn.disabled = true;
+            } else if (!currentDisplay.includes('*')) {
                 messagesContainer.textContent = 'You Win!';
                 balloonImage.src = 'youwin.png';
                 playSound('win');
                 disableAllLetters();
                 nextBtn.style.display = currentWordIndex < wordQueue.length - 1 ? 'inline-block' : 'none';
+                hintBtn.disabled = true;
             }
         }
 
@@ -417,6 +452,7 @@
             updateDisplay();
             createLetterGrid();
             nextBtn.style.display = 'none';
+            hintBtn.disabled = true;
             updateQueueCounter();
         }
 
@@ -455,6 +491,7 @@
             createLetterGrid();
             messagesContainer.textContent = `Game started!`;
             nextBtn.style.display = 'none';
+            hintBtn.disabled = false;
             updateQueueCounter();
         }
 
@@ -470,8 +507,31 @@
                 createLetterGrid();
                 messagesContainer.textContent = `Next item!`;
                 nextBtn.style.display = 'none';
+                hintBtn.disabled = false;
             }
             updateQueueCounter();
+        }
+
+        // Hint System
+        function getHint() {
+            if (attemptsLeft <= 1) {
+                messagesContainer.textContent = 'Not enough balloons for a hint!';
+                return;
+            }
+
+            const unguessed = currentWord.split('')
+                .filter(char => /[a-zA-Z]/.test(char) && !guessedLetters.includes(char.toUpperCase()));
+            
+            if (unguessed.length === 0) {
+                messagesContainer.textContent = 'No more hints available!';
+                return;
+            }
+
+            const hintLetter = unguessed[Math.floor(Math.random() * unguessed.length)].toUpperCase();
+            attemptsLeft -= 1; // Hint costs 1 balloon
+            guessLetter(hintLetter);
+            messagesContainer.textContent = `Hint: Used letter ${hintLetter}`;
+            updateImage();
         }
 
         // Event listeners
@@ -479,20 +539,27 @@
         addQueueBtn.addEventListener('click', addToQueue);
         startGameBtn.addEventListener('click', startGame);
         nextBtn.addEventListener('click', nextWord);
+        hintBtn.addEventListener('click', getHint);
         wordInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') addToQueue();
         });
 
-        // Initial setup
-        messagesContainer.textContent = 'Add words or phrases to start';
-        attemptsRemaining.textContent = 'Balloons remaining: 7';
-        updateQueueCounter();
-        createLetterGrid();
-        const backgroundAudio = new Audio(soundFiles.background);
-        backgroundAudio.loop = true;
-        backgroundAudio.play().catch(error => {
-            console.log('Background audio playback failed:', error);
-        });
+        // Initial setup with background audio
+        function initialSetup() {
+            messagesContainer.textContent = 'Add words or phrases to start';
+            attemptsRemaining.textContent = 'Balloons remaining: 7';
+            updateQueueCounter();
+            createLetterGrid();
+            hintBtn.disabled = true;
+            
+            // Setup background audio with looping
+            const backgroundPlayer = new AudioPlayer(soundFiles.background, true);
+            backgroundPlayer.play().catch(error => {
+                console.log('Background audio playback failed:', error);
+            });
+        }
+
+        initialSetup();
     </script>
 </body>
 </html>
